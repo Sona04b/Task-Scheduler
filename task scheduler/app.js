@@ -131,6 +131,58 @@ app.post("/add-task", (req, res) => {
     });
 });
 
+// API endpoint to update task completion status
+app.post("/update-task/:id", (req, res) => {
+    const taskId = req.params.id;
+    const { is_completed } = req.body;
+
+    const sql = "UPDATE tasks SET is_completed = ? WHERE id = ?";
+    db.query(sql, [is_completed, taskId], (err, result) => {
+        if (err) {
+            console.error("Error updating task:", err);
+            return res.json({ success: false, message: "Failed to update task." });
+        }
+
+        res.json({ success: true, message: "Task updated successfully." });
+    });
+});
+
+// Fetch completed tasks
+app.get("/completed-tasks", (req, res) => {
+    const sql = `SELECT task_title, due_date FROM tasks WHERE is_completed = 1 ORDER BY created_at DESC`;
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error("Error fetching completed tasks:", err);
+            return res.status(500).json({ success: false, message: "Database error." });
+        }
+        res.json({ success: true, tasks: results });
+    });
+});
+
+// API endpoint to update a task
+// API endpoint to update a task's title without changing the reminder time
+app.post("/update-task-title/:taskId", (req, res) => {
+    const { taskId } = req.params;  // Get task ID from URL
+    const { task_title } = req.body;  // Get updated task title from request body
+
+    // SQL query to update only the task title
+    const sql = "UPDATE tasks SET task_title = ? WHERE id = ?";
+    db.query(sql, [task_title, taskId], (err, result) => {
+        if (err) {
+            console.error("Error updating task:", err);
+            res.json({ success: false, message: "Failed to update task." });
+        } else if (result.affectedRows > 0) {
+            // Task title updated successfully, no change to reminder time
+
+            // No change in reminder time, so no need to reschedule the reminder
+            res.json({ success: true, message: "Task title updated successfully." });
+        } else {
+            res.json({ success: false, message: "No task found with this ID." });
+        }
+    });
+});
+
+
 // Start the server
 const PORT = 3000;
 app.listen(PORT, () => {
