@@ -4,27 +4,171 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Global Styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Hide scrollbars for a clean look */
+        }
+
+        /* Interactive Background */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, #ff0066, #ffcc00, #0066ff, #00cc99);
+            background-size: 400% 400%;
+            animation: gradientAnimation 10s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        main {
+            text-align: center;
+            width: 100%;
+            color: #fff; /* White text color */
+        }
+
+        h1 {
+            color: #ffcc00; /* Highlight title in yellow */
+        }
+
+        /* Form Container Styling */
+        .register-form-container {
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
+            background: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            border-radius: 5px;
+            border: none;
+            background-color: #333; /* Input background */
+            color: #fff; /* Input text color */
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            width: 100%;
+            background-color: #ff0066; /* Button color */
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #cc0052; /* Darker pink on hover */
+        }
+
+        p {
+            margin-top: 15px;
+        }
+
+        a {
+            color: #ffcc00;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Register</h1>
-    </header>
     <main>
-        <div class="register-form">
-            <label for="username">Username:</label>
-            <input type="text" id="username" placeholder="Enter username" required>
+        <header>
+            <h1>Register</h1>
+        </header>
 
-            <label for="password">Password:</label>
-            <input type="password" id="password" placeholder="Enter password" required>
-
-            <label for="department">Department:</label>
-            <input type="text" id="department" placeholder="Enter department" required>
-
-            <button id="register-button">Register</button>
+        <!-- Registration Form -->
+        <div class="register-form-container">
+            <form id="register-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <input type="text" id="department" placeholder="Department" required>
+                <button type="submit">Register</button>
+            </form>
             <p>Already have an account? <a href="index.html">Login here</a></p>
         </div>
     </main>
-    <script src="register.js"></script>
+
+    <script>
+        // Handle registration form submission
+        document.getElementById('register-form').addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent the form from reloading the page
+
+            // Get form data
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const department = document.getElementById('department').value;
+
+            // Prepare the data to be sent to the backend
+            const userData = {
+                username: username,
+                password: password,
+                department: department
+            };
+
+            try {
+                // Send POST request to the backend API
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData) // Send form data as JSON
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Registration successful!');
+                    window.location.href = '/index.html'; // Redirect to login page after successful registration
+                } else {
+                    alert(result.message || 'Registration failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('There was an error submitting your registration.');
+            }
+        });
+    </script>
 </body>
 </html>
