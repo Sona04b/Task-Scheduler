@@ -13,21 +13,3 @@ Frontend: HTML, CSS, JavaScript
 Backend: Node.js with Express
 Database: MySQL
 Interactive Background: Particles.js (for an interactive, dynamic background)
-
-login page
-![image](https://github.com/user-attachments/assets/74b99259-b865-44ec-ac0d-db30d408d1cd)
-
-register page
-![image](https://github.com/user-attachments/assets/d7424b3c-ae59-4ea9-a008-f2f33441aa99)
-
-registration successful
-![image](https://github.com/user-attachments/assets/431f1940-2578-46b9-a244-1743556cdfdb)
-
-login successful
-![image](https://github.com/user-attachments/assets/0e8c2d44-91cb-49ba-ba40-750f8c8ae79e)
-
-add task
-![image](https://github.com/user-attachments/assets/14ee1aa1-de2f-490e-bf4d-b404dee58828)
-
-active and completed tasks
-![image](https://github.com/user-attachments/assets/d6c47f2c-8c84-41c3-b41f-082a9cfd3e81)
