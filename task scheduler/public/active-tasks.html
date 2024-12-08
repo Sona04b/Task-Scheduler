@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Tasks</title>
+    <style>
+        /* Global Styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, #ff0066, #ffcc00, #0066ff, #00cc99);
+            background-size: 400% 400%;
+            animation: gradientAnimation 10s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 36px;
+            color: #ffcc00;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #fff;
+            padding: 10px;
+            text-align: left;
+            color: #ddd;
+        }
+
+        th {
+            background-color: #333;
+        }
+
+        .btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .edit-btn {
+            background-color: #0066ff;
+            color: white;
+        }
+
+        .save-btn {
+            background-color: #00cc66;
+            color: white;
+        }
+
+        .back-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #ff0066;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .back-btn:hover {
+            background-color: #cc0052;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Active Tasks</h1>
+        <table id="task-table">
+            <thead>
+                <tr>
+                    <th>Task Title</th>
+                    <th>Due Date</th>
+                    <th>Completed</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Active tasks will be dynamically inserted here -->
+            </tbody>
+        </table>
+
+        <a href="task-scheduler.html" class="back-btn">Back to Task Scheduler</a>
+    </div>
+
+    <script>
+        // Fetch active tasks from the backend
+        async function fetchActiveTasks() {
+            try {
+                const response = await fetch('/tasks'); // Fetching active tasks from the server
+                const data = await response.json();
+                const taskTable = document.getElementById('task-table').getElementsByTagName('tbody')[0];
+
+                if (data.success && data.tasks.length > 0) {
+                    data.tasks.forEach(task => {
+                        if (task.is_completed === 0) {
+                            const row = taskTable.insertRow();
+                            const taskTitleCell = row.insertCell(0);
+                            const dueDateCell = row.insertCell(1);
+                            const completedCell = row.insertCell(2); // For the checkbox
+                            const actionsCell = row.insertCell(3);
+
+                            taskTitleCell.textContent = task.task_title;
+                            dueDateCell.textContent = task.due_date;
+
+                            // Create checkbox for task completion
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.checked = task.is_completed === 1;  // Check if task is completed
+                            checkbox.addEventListener('change', () => handleTaskCompletion(task.id, checkbox));
+
+                            completedCell.appendChild(checkbox);
+
+                            // Edit Button
+                            const editBtn = document.createElement('button');
+                            editBtn.textContent = 'Edit';
+                            editBtn.classList.add('btn', 'edit-btn');
+                            editBtn.addEventListener('click', () => enableEditing(taskTitleCell, saveBtn));
+
+                            // Save Button (Initially Hidden)
+                            const saveBtn = document.createElement('button');
+                            saveBtn.textContent = 'Save';
+                            saveBtn.classList.add('btn', 'save-btn');
+                            saveBtn.style.display = 'none';
+                            saveBtn.addEventListener('click', () => handleTaskTitleUpdate(task.id, taskTitleCell, editBtn, saveBtn));
+
+                            actionsCell.appendChild(editBtn);
+                            actionsCell.appendChild(saveBtn);
+                        }
+                    });
+                } else {
+                    const row = taskTable.insertRow();
+                    const cell = row.insertCell(0);
+                    cell.colSpan = 4;
+                    cell.textContent = 'No active tasks available.';
+                    cell.style.textAlign = 'center';
+                }
+            } catch (error) {
+                console.error('Error fetching active tasks:', error);
+            }
+        }
+
+        // Enable editing for a task title
+        function enableEditing(taskTitleCell, saveBtn) {
+            taskTitleCell.setAttribute('contenteditable', 'true');
+            taskTitleCell.focus();
+            saveBtn.style.display = 'inline-block';
+        }
+
+        // Handle task title update
+        async function handleTaskTitleUpdate(taskId, taskTitleCell, editBtn, saveBtn) {
+            const updatedTitle = taskTitleCell.textContent.trim();
+
+            if (updatedTitle) {
+                try {
+                    const response = await fetch(`/update-task-title/${taskId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ task_title: updatedTitle }),
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        taskTitleCell.removeAttribute('contenteditable');
+                        saveBtn.style.display = 'none';
+                        editBtn.style.display = 'inline-block';
+                        alert('Task title updated successfully.');
+                    } else {
+                        alert('Failed to update task title.');
+                    }
+                } catch (error) {
+                    console.error('Error updating task title:', error);
+                }
+            } else {
+                alert('Task title cannot be empty.');
+            }
+        }
+
+        // Handle task completion
+        async function handleTaskCompletion(taskId, checkbox, row) {
+            const completedTime = new Date().toISOString();  // Get the current time and date
+
+            // Update task completion in the database
+            try {
+                const response = await fetch(`/update-task/${taskId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        is_completed: checkbox.checked ? 1 : 0,
+                        completed_at: checkbox.checked ? completedTime : null, // Send the completion time only if checked
+                    }),
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    // If task is completed, remove it from the table
+                    if (checkbox.checked) {
+                        row.remove();  // Remove the completed task from the table
+                    }
+                } else {
+                    console.error('Failed to update task.');
+                }
+            } catch (error) {
+                console.error('Error updating task:', error);
+            }
+        }
+
+        // Handle task title update
+        async function handleTaskTitleUpdate(taskId, taskTitleCell) {
+            const updatedTitle = taskTitleCell.textContent.trim();
+
+            // Update task title in the database if it's different
+            if (updatedTitle) {
+                try {
+                    const response = await fetch(`/update-task-title/${taskId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ task_title: updatedTitle }),
+                    });
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        console.error('Failed to update task title.');
+                    }
+                } catch (error) {
+                    console.error('Error updating task title:', error);
+                }
+            }
+        }
+
+        // Fetch tasks on page load
+        window.onload = fetchActiveTasks;
+    </script>
+
+</body>
+</html>
