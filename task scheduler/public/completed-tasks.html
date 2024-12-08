@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completed Tasks</title>
+    <style>
+        /* Global Styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        /* Interactive Background */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, #ff0066, #ffcc00, #0066ff, #00cc99);
+            background-size: 400% 400%;
+            animation: gradientAnimation 10s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Container for Completed Tasks */
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            color: white;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 36px;
+            color: #ffcc00;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #fff;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            color: #ddd;
+        }
+
+        th {
+            background-color: #333;
+        }
+
+        .back-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #ff0066;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background-color: #cc0052;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Completed Tasks</h1>
+
+        <!-- Completed Tasks Table -->
+        <table id="completed-tasks-table">
+            <thead>
+                <tr>
+                    <th>Task Title</th>
+                    <th>Due Date</th>
+                    
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Task items will be dynamically inserted here -->
+            </tbody>
+        </table>
+
+        <a href="task-scheduler.html" class="back-btn">Back to Scheduler</a>
+    </div>
+
+    <script>
+        // Fetch completed tasks from the backend
+        async function fetchCompletedTasks() {
+            try {
+                const response = await fetch('/completed-tasks');
+                const data = await response.json();
+
+                const taskTable = document.getElementById('completed-tasks-table').getElementsByTagName('tbody')[0];
+
+                if (data.success && data.tasks.length > 0) {
+                    data.tasks.forEach(task => {
+                        const row = taskTable.insertRow();
+                        const taskTitleCell = row.insertCell(0);
+                        const dueDateCell = row.insertCell(1);
+                        
+
+                        taskTitleCell.textContent = task.task_title;
+                        dueDateCell.textContent = task.due_date;
+                        
+                    });
+                } else {
+                    const row = taskTable.insertRow();
+                    const cell = row.insertCell(0);
+                    cell.colSpan = 3;
+                    cell.textContent = 'No completed tasks available.';
+                    cell.style.textAlign = 'center';
+                }
+            } catch (error) {
+                console.error('Error fetching completed tasks:', error);
+                const taskTable = document.getElementById('completed-tasks-table').getElementsByTagName('tbody')[0];
+                const row = taskTable.insertRow();
+                const cell = row.insertCell(0);
+                cell.colSpan = 3;
+                cell.textContent = 'Error loading tasks.';
+                cell.style.textAlign = 'center';
+            }
+        }
+
+        // Call the function to fetch tasks when the page loads
+        window.onload = fetchCompletedTasks;
+    </script>
+
+</body>
+</html>
