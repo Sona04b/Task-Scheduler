@@ -1,4 +1,6 @@
-![image](https://github.com/user-attachments/assets/cb05b82e-c865-4dc3-8710-f60d83402b6a)The Task Scheduler App is a simple yet efficient web application designed to help users manage and track their tasks. With a clean and intuitive interface, this app allows users to add tasks, set due dates, and mark tasks as completed. The app supports a dynamic background, task management with active and completed categories, and ensures that users can keep track of their progress seamlessly.
+TASK SCHEDULER
+
+The Task Scheduler App is a simple yet efficient web application designed to help users manage and track their tasks. With a clean and intuitive interface, this app allows users to add tasks, set due dates, and mark tasks as completed. The app supports a dynamic background, task management with active and completed categories, and ensures that users can keep track of their progress seamlessly.
 
 Features:
 Add New Tasks: Users can input task titles, due dates, and reminder times.
