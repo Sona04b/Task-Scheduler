@@ -118,6 +118,77 @@ app.put("/mark-task-completed/:id", (req, res) => {
 });
 
 
+fetch('/api/update-task', {
+    method: 'PATCH', // or 'PUT' depending on your API design
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      taskId: task.id,  // task ID to update
+      completed: checkbox.checked ? 1 : 0,  // sends 1 for checked, 0 for unchecked
+    }),
+  });
+  
+  db.query('SELECT 1', (err, results) => {
+    if (err) {
+        console.error("Database connection error:", err);
+    } else {
+        console.log("Database connected:", results);
+    }
+});
+
+// server.js
+
+const express = require('express');
+const nodemailer = require('nodemailer');
+const cron = require('node-cron');
+
+const bodyParser = require('body-parser');
+
+// Store tasks (in-memory, in a real app, you would store this in a database)
+let tasks = [];
+
+app.use(bodyParser.json());
+
+// Setup nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'gmail', // Use your email service provider (Gmail, SendGrid, etc.)
+    auth: {
+        user: 'sona04b@gmail.com', // Your email
+        pass: 'SonA04SonZ'  // Your email password or app password
+    }
+});
+
+
+// Function to schedule reminder email
+function scheduleReminderEmail(reminderTime, taskTitle, email) {
+    // Parse reminder time (for simplicity, assume it's in ISO 8601 format)
+    const reminderDate = new Date(reminderTime);
+
+    // Schedule the email to be sent at the reminder time
+    cron.schedule(reminderDate, () => {
+        sendReminderEmail(taskTitle, email);
+    });
+}
+
+// Function to send reminder email
+function sendReminderEmail(taskTitle, email) {
+    const mailOptions = {
+        from: 'your-email@gmail.com',
+        to: email,
+        subject: `Reminder for Task: ${taskTitle}`,
+        text: `This is a reminder for your task: "${taskTitle}".`
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.log('Error sending email:', error);
+        } else {
+            console.log('Reminder email sent:', info.response);
+        }
+    });
+}
+
 
 // Start the server
 const PORT = 3000;
