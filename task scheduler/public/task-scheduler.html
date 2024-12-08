@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager with Snowfall Effect</title>
+    <style>
+        /* Body styling */
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: #222;
+            position: relative;
+            overflow: auto; /* Allow content to scroll */
+        }
+
+        /* Snowfall Effect */
+        .snowflakes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Disable interaction with the snowflakes */
+            z-index: -1; /* Ensure the snowflakes are behind content */
+        }
+
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            color: white;
+            font-size: 1em;
+            user-select: none;
+            pointer-events: none;
+            animation: fall 10s linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh); /* Snowflakes fall to the bottom */
+            }
+        }
+
+        /* Container styling */
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            position: relative;
+            z-index: 1;  /* Ensure content stays on top of the snowflakes */
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 36px;
+            color: #333;
+        }
+
+        /* Task Form Styles */
+        .task-form input, .task-form button {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .task-form button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* Task Table Styles */
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .task-table th, .task-table td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        .task-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .task-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Snowfall effect -->
+    <div class="snowflakes"></div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <h1>Task Manager</h1>
+
+        <!-- Task Form -->
+        <div class="task-form">
+            <h3>Add New Task</h3>
+            <input type="text" id="task-title" placeholder="Task Title" />
+            <input type="date" id="due-date" />
+            <input type="email" id="additional-info" placeholder="Email (for reminders)" />
+            <input type="datetime-local" id="additional-datetime" />
+            <button id="add-task">Add Task</button>
+        </div>
+
+        <!-- Active Tasks List -->
+        <div class="task-list">
+            <h2>Active Tasks</h2>
+            <table id="task-table" class="task-table">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Due Date</th>
+                        <th>Complete</th>
+                        <th>Edit</th>
+                    </tr>
+                </thead>
+                <tbody id="task-table-body">
+                    <!-- Tasks will be dynamically added here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Completed Tasks -->
+        <div class="completed-tasks">
+            <h3>Completed Tasks</h3>
+            <ul id="completed-tasks-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        // Snowfall generation
+        function generateSnowflakes() {
+            const numSnowflakes = 100;
+            const snowflakesContainer = document.querySelector('.snowflakes');
+
+            for (let i = 0; i < numSnowflakes; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('snowflake');
+                snowflake.textContent = '❄'; // Snowflake character
+                snowflake.style.left = `${Math.random() * 100}vw`; // Random horizontal position
+                snowflake.style.animationDuration = `${Math.random() * 5 + 5}s`; // Random fall speed
+                snowflake.style.fontSize = `${Math.random() * 10 + 10}px`; // Random size
+                snowflakesContainer.appendChild(snowflake);
+            }
+        }
+
+        // Call the function to generate snowflakes when the page loads
+        generateSnowflakes();
+        
+        // fetch task
+        async function fetchTasks() {
+            const response = await fetch("/tasks");
+            const result = await response.json();
+
+            if (result.success) {
+                const tasks = result.tasks;
+                const taskTableBody = document.getElementById("task-table-body");
+                taskTableBody.innerHTML = ''; // Clear existing active tasks
+
+                tasks.forEach((task) => {
+                    const taskRow = document.createElement("tr");
+                    taskRow.setAttribute("data-task-id", task.id);
+
+                    if (!task.completed) { // Only show active tasks
+                        taskRow.innerHTML = `
+                            <td>${task.task_title}</td>
+                            <td>${task.due_date}</td>
+                            <td><input type="checkbox" data-task-id="${task.id}" onclick="markTaskAsCompleted(${task.id}, this.checked)"></td>
+                            <td><button onclick="editTask(${task.id})">Edit</button></td>
+                        `;
+                        taskTableBody.appendChild(taskRow);
+                    } else { // Completed tasks (these will remain in the completed tasks list)
+                        const completedTasksList = document.getElementById("completed-tasks-list");
+                        const completedTaskItem = document.createElement("li");
+                        completedTaskItem.textContent = task.task_title;
+                        completedTasksList.appendChild(completedTaskItem);
+                    }
+                });
+            } else {
+                alert("Error fetching tasks: " + result.message);
+            }
+        }
+
+
+
+        // Mark task as completed
+        function markTaskAsCompleted(taskId, isChecked) {
+            const completed = isChecked ? 1 : 0; // Set completed to 1 if checked, 0 if unchecked
+
+            // Send a PUT request to update the task's completion status
+            fetch(`/mark-task-completed/${taskId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ completed }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Task updated successfully");
+                    // Optionally, refresh the task list or update the UI
+                } else {
+                    console.error("Error updating task:", data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Error sending request:", error);
+            });
+        }
+
+
+        function editTask(taskId) {
+            const taskRow = document.querySelector(`tr[data-task-id="${taskId}"]`); // Get the task row using the task ID
+            const taskTitleCell = taskRow.querySelector('td:first-child'); // Get the first cell (task title)
+
+            // Prompt the user for a new task title
+            const newTitle = prompt("Enter new task title:", taskTitleCell.textContent);
+
+            if (newTitle && newTitle !== taskTitleCell.textContent) {
+                // Update the task title in the table
+                taskTitleCell.textContent = newTitle;
+            }
+        }
+
+        // Add new task
+        document.getElementById("add-task").addEventListener("click", async () => {
+            const taskTitle = document.getElementById("task-title").value;
+            const dueDate = document.getElementById("due-date").value;
+            const reminderTime = document.getElementById("additional-datetime").value;
+            const email = document.getElementById("additional-info").value;
+
+            if (!taskTitle || !dueDate || !reminderTime || !email) {
+                alert("All fields are required!");
+                return;
+            }
+
+            const newTask = { task_title: taskTitle, due_date: dueDate, reminder_time: reminderTime, email: email };
+
+            try {
+                const response = await fetch("/add-task", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newTask)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert("Task added successfully!");
+                    fetchTasks(); // Reload tasks after adding
+                } else {
+                    alert("Error adding task: " + result.message);
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("An error occurred while adding the task.");
+            }
+        });
+
+        // Initial fetch to display tasks
+        fetchTasks();
+    </script>
+
+</body>
+</html>
