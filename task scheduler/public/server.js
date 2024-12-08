@@ -78,17 +78,19 @@ app.post("/add-task", (req, res) => {
 
 app.put("/mark-task-completed/:id", (req, res) => {
     const taskId = req.params.id;
-    const { completed } = req.body; // The 'completed' value sent from frontend (1 or 0)
+    const { completed } = req.body;
 
-    // Update the task's completed status in the database
-    const sql = `UPDATE tasks SET completed = 1 WHERE id = ?`;
+    if (!taskId || completed === undefined) {
+        return res.status(400).json({ success: false, message: "Invalid input" });
+    }
+
+    const sql = `UPDATE tasks SET completed = ? WHERE id = ?`;
     db.query(sql, [completed, taskId], (err, result) => {
         if (err) {
             console.error("Error updating task:", err);
             return res.status(500).json({ success: false, message: "Database error." });
         }
 
-        // Check if any row was affected
         if (result.affectedRows > 0) {
             return res.json({ success: true, message: "Task updated successfully." });
         } else {
